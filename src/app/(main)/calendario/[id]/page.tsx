@@ -27,6 +27,7 @@ export default function ActividadDetallePage() {
   const [edit, setEdit] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [monedaBase, setMonedaBase] = useState<string>('USD');
+  const [grupoSize, setGrupoSize] = useState<number | undefined>(undefined);
   const { translate } = useLocale();
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function ActividadDetallePage() {
         const actividadData: Actividad = await res.json();
         setActividad(actividadData);
         
-        // Cargar información del viaje para obtener moneda base
+        // Cargar información del viaje para obtener moneda base y grupoSize
         if (actividadData.viajeId) {
           try {
             const viajeRes = await fetch(`${API_URL}/viajes/${actividadData.viajeId}`, {
@@ -49,6 +50,41 @@ export default function ActividadDetallePage() {
             if (viajeRes.ok) {
               const viaje = await viajeRes.json();
               setMonedaBase(viaje.monedaBase ?? viaje.moneda_base ?? 'USD');
+
+              // Cargar información del grupo para obtener grupoSize
+              const grupoId: number | undefined =
+                viaje.grupo?.id ??
+                viaje.grupo_id ??
+                viaje.grupoId ??
+                undefined;
+
+              if (grupoId) {
+                try {
+                  const grupoRes = await fetch(`${API_URL}/grupo/${grupoId}`, {
+                    cache: 'no-store',
+                  });
+
+                  if (grupoRes.ok) {
+                    const grupo = await grupoRes.json();
+
+                    let integrantesCount: number | undefined;
+
+                    if (Array.isArray(grupo.integrantes)) {
+                      integrantesCount = grupo.integrantes.length;
+                    } else if (Array.isArray(grupo.usuarios)) {
+                      integrantesCount = grupo.usuarios.length;
+                    } else if (typeof grupo.tamano === 'number') {
+                      integrantesCount = grupo.tamano;
+                    }
+
+                    if (typeof integrantesCount === 'number' && integrantesCount > 0) {
+                      setGrupoSize(integrantesCount);
+                    }
+                  }
+                } catch (e) {
+                  console.error('Error cargando información del grupo del viaje:', e);
+                }
+              }
             }
           } catch (e) {
             console.error('Error cargando información del viaje:', e);
@@ -286,6 +322,7 @@ export default function ActividadDetallePage() {
             <ActividadForm
               viajeId={actividad.viajeId}
               monedaBase={monedaBase}
+              grupoSize={grupoSize}
               defaultValues={actividad}
               onSubmit={onUpdate}
               onCancel={() => setEdit(false)}
