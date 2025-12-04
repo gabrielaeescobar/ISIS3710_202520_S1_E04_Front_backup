@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
         hostname: "2bde3tg5uh.ufs.sh",
         pathname: "/**",
       },
+       {
+        protocol: "https",
+        hostname: "unsplash.com",
+        pathname: "/**",
+      },
     ],
   },
 
