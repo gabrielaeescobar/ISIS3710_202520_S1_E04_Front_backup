@@ -319,6 +319,7 @@ export default function ActividadDetallePage() {
             </>
           ) : (
             <ActividadForm
+              key={`edit-${id}-${grupoSize ?? 'loading'}`}
               viajeId={actividad.viajeId}
               monedaBase={monedaBase}
               grupoSize={grupoSize}
