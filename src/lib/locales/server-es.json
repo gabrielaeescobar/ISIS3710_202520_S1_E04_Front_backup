@@ -1,0 +1,29 @@
+{
+  "errors.trip.notFound": "Viaje no encontrado",
+  "errors.trip.create": "Error al crear viaje",
+  "errors.trip.update": "Error al actualizar viaje",
+  "errors.trip.unknown": "Error desconocido al procesar viaje",
+  "errors.trip.validation": "Error de validación",
+  "errors.trip.invalidDates": "La fecha fin no puede ser menor que la fecha inicio",
+  "errors.generic": "Error del servidor",
+  "errors.validation": "Error de validación de datos",
+  "success.trip.created": "Viaje creado exitosamente",
+  "success.trip.updated": "Viaje actualizado exitosamente",
+
+  
+    "validation.gasto.concepto.required": "Concepto requerido",
+  "validation.gasto.monto.positive": "Monto debe ser mayor a 0",
+  "validation.gasto.categoria.required": "Categoría requerida",
+  "validation.gasto.grupoId.positive": "ID de grupo debe ser positivo",
+  "validation.gasto.viajeId.positive": "ID de viaje debe ser positivo",
+  "validation.gasto.pagadoPor.required": "Pagado por es requerido",
+  "errors.gasto.notFound": "Gasto no encontrado",
+  "errors.gasto.missingId": "ID de gasto requerido",
+  "errors.gasto.validation": "Error de validación en los datos del gasto",
+  "errors.gasto.create": "Error al crear el gasto",
+  "errors.gasto.update": "Error al actualizar el gasto",
+  "errors.gasto.delete": "Error al eliminar el gasto",
+  "success.gasto.created": "Gasto creado exitosamente",
+  "success.gasto.updated": "Gasto actualizado exitosamente",
+  "success.gasto.deleted": "Gasto eliminado exitosamente"
+}

@@ -1,0 +1,29 @@
+{
+  "errors.trip.notFound": "Trip not found",
+  "errors.trip.create": "Error creating trip",
+  "errors.trip.update": "Error updating trip",
+  "errors.trip.unknown": "Unknown error processing trip",
+  "errors.trip.validation": "Validation error",
+  "errors.trip.invalidDates": "End date cannot be earlier than start date",
+  "errors.generic": "Server error",
+  "errors.validation": "Data validation error",
+  "success.trip.created": "Trip created successfully",
+  "success.trip.updated": "Trip updated successfully",
+
+  
+  "validation.gasto.concepto.required": "Concept required",
+  "validation.gasto.monto.positive": "Amount must be greater than 0",
+  "validation.gasto.categoria.required": "Category required",
+  "validation.gasto.grupoId.positive": "Group ID must be positive",
+  "validation.gasto.viajeId.positive": "Trip ID must be positive",
+  "validation.gasto.pagadoPor.required": "Paid by is required",
+  "errors.gasto.notFound": "Expense not found",
+  "errors.gasto.missingId": "Expense ID required",
+  "errors.gasto.validation": "Expense data validation error",
+  "errors.gasto.create": "Error creating expense",
+  "errors.gasto.update": "Error updating expense",
+  "errors.gasto.delete": "Error deleting expense",
+  "success.gasto.created": "Expense created successfully",
+  "success.gasto.updated": "Expense updated successfully",
+  "success.gasto.deleted": "Expense deleted successfully"
+}
