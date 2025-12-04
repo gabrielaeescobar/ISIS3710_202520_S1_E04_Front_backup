@@ -87,11 +87,11 @@ export function ActividadForm({
             ? parseFloat(defaultValues.precioPorPersona) 
             : defaultValues.precioPorPersona)
         : undefined,
-      // Si se está editando una actividad existente, intentar inferir el número de
-      // personas a partir de precioTotal / precioPorPersona. En creación nueva,
-      // cuando usamos grupoSize, este campo puede quedar undefined.
+      // Si se está editando una actividad existente y NO hay grupoSize, intentar inferir 
+      // el número de personas a partir de precioTotal / precioPorPersona.
+      // Si hay grupoSize, no inferir numeroPersonas (se usará grupoSize para calcular precioTotal).
       numeroPersonas:
-        defaultValues?.precioTotal && defaultValues?.precioPorPersona
+        !grupoSize && defaultValues?.precioTotal && defaultValues?.precioPorPersona
         ? Math.round(
               (typeof defaultValues.precioTotal === 'string'
                 ? parseFloat(defaultValues.precioTotal)
