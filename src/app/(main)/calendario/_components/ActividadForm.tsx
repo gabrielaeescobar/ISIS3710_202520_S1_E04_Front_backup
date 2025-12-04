@@ -105,7 +105,7 @@ export function ActividadForm({
       descripcion: defaultValues?.descripcion || "",
       viajeId,
       usuarioPagadorId: defaultValues?.usuarioPagadorId || (user?.id ? Number(user.id) : 0),
-      ubicacionId: defaultValues?.ubicacionId || 0,
+      ubicacionId: defaultValues?.ubicacionId ? Number(defaultValues.ubicacionId) : 0,
     },
     mode: "onChange",
   });
@@ -331,7 +331,7 @@ export function ActividadForm({
         )}
         <Button
           type="submit"
-          disabled={loading || !isValid}
+          disabled={loading}
           className="bg-[#d5efb8] text-black hover:bg-[#c3e19e]"
         >
           {loading 
