@@ -28,6 +28,7 @@ export default function ActividadDetallePage() {
   const [err, setErr] = useState<string | null>(null);
   const [monedaBase, setMonedaBase] = useState<string>('USD');
   const [grupoSize, setGrupoSize] = useState<number | undefined>(undefined);
+  const [grupoSizeLoaded, setGrupoSizeLoaded] = useState(false);
   const { translate } = useLocale();
 
   useEffect(() => {
@@ -83,12 +84,24 @@ export default function ActividadDetallePage() {
                   }
                 } catch (e) {
                   console.error('Error cargando información del grupo del viaje:', e);
+                } finally {
+                  setGrupoSizeLoaded(true);
                 }
+              } else {
+                // No hay grupoId, marcar como cargado
+                setGrupoSizeLoaded(true);
               }
+            } else {
+              // No se pudo cargar el viaje, marcar como cargado
+              setGrupoSizeLoaded(true);
             }
           } catch (e) {
             console.error('Error cargando información del viaje:', e);
+            setGrupoSizeLoaded(true);
           }
+        } else {
+          // No hay viajeId, marcar como cargado
+          setGrupoSizeLoaded(true);
         }
       } catch (e: unknown) {
         setErr(e instanceof Error ? e.message : translate('eventos.detail.unexpectedError', 'Error inesperado'));
@@ -318,8 +331,9 @@ export default function ActividadDetallePage() {
                 )}
               </div>
             </>
-          ) : (
+          ) : grupoSizeLoaded ? (
             <ActividadForm
+              key={`edit-${actividad.id}-${grupoSize ?? 'no-group'}`}
               viajeId={actividad.viajeId}
               monedaBase={monedaBase}
               grupoSize={grupoSize}
@@ -328,6 +342,18 @@ export default function ActividadDetallePage() {
               onCancel={() => setEdit(false)}
               submitLabel={translate('eventos.detail.updateEvent', 'Actualizar actividad')}
             />
+          ) : (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center text-gray-500">
+                <div className="w-8 h-8 mx-auto mb-2 text-gray-300 animate-spin">
+                  <svg fill="none" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25"/>
+                    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75"/>
+                  </svg>
+                </div>
+                <p>{translate('eventos.detail.loading', 'Cargando...')}</p>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
