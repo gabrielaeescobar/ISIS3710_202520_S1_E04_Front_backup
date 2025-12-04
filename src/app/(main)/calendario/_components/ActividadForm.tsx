@@ -61,15 +61,13 @@ export function ActividadForm({
   const { translate } = useLocale();
   const user = getAuthUser();
 
-  // Debug
-  console.log('ActividadForm - grupoSize:', grupoSize, 'monedaBase:', monedaBase);
-
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
     setValue,
     watch,
+    reset,
   } = useForm<ActividadFormValues>({
     resolver: zodResolver(actividadSchema),
     defaultValues: {
@@ -120,18 +118,23 @@ export function ActividadForm({
     }
   }, [user, setValue]);
 
+  // Cuando grupoSize cambie, limpiar numeroPersonas si estaba calculado
+  useEffect(() => {
+    if (grupoSize && defaultValues) {
+      const currentNumeroPersonas = watch('numeroPersonas');
+      if (currentNumeroPersonas && defaultValues.precioTotal && defaultValues.precioPorPersona) {
+        setValue('numeroPersonas', undefined, { shouldValidate: false });
+      }
+    }
+  }, [grupoSize, defaultValues, setValue, watch]);
+
   const submit: SubmitHandler<ActividadFormValues> = async (values) => {
-    console.log('ActividadForm - submit llamado con values:', values);
-    console.log('ActividadForm - grupoSize en submit:', grupoSize);
-    
     // Calcular precio Total
     let precioTotal: number | undefined = undefined;
     const participantes: number | undefined =
       typeof values.numeroPersonas === 'number' && values.numeroPersonas > 0
         ? values.numeroPersonas
         : (grupoSize && grupoSize > 0 ? grupoSize : undefined);
-
-    console.log('ActividadForm - participantes calculados:', participantes);
 
     if (values.precioPorPersona && participantes) {
       const precioPorPersonaNum = typeof values.precioPorPersona === 'number' 
@@ -153,8 +156,6 @@ export function ActividadForm({
       usuarioPagadorId: typeof values.usuarioPagadorId === 'number' ? values.usuarioPagadorId : Number(values.usuarioPagadorId),
       ubicacionId: typeof values.ubicacionId === 'number' ? values.ubicacionId : Number(values.ubicacionId),
     };
-    
-    console.log('ActividadForm - parsed para enviar:', parsed);
     await onSubmit(parsed);
   };
 
