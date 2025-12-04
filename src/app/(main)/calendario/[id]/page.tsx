@@ -28,6 +28,7 @@ export default function ActividadDetallePage() {
   const [err, setErr] = useState<string | null>(null);
   const [monedaBase, setMonedaBase] = useState<string>('USD');
   const [grupoSize, setGrupoSize] = useState<number | undefined>(undefined);
+  const [updating, setUpdating] = useState(false);
   const { translate } = useLocale();
 
   useEffect(() => {
@@ -119,6 +120,7 @@ export default function ActividadDetallePage() {
   };
 
   const onUpdate = async (values: ActividadCreate): Promise<void> => {
+    setUpdating(true);
     try {
       const updateData: ActividadUpdate = {
         nombre: values.nombre,
@@ -151,6 +153,8 @@ export default function ActividadDetallePage() {
     } catch (error) {
       console.error('Error actualizando actividad:', error);
       alert(translate('eventos.detail.updateError', 'No se pudo actualizar'));
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -325,6 +329,7 @@ export default function ActividadDetallePage() {
               defaultValues={actividad}
               onSubmit={onUpdate}
               onCancel={() => setEdit(false)}
+              loading={updating}
               submitLabel={translate('eventos.detail.updateEvent', 'Actualizar actividad')}
             />
           )}

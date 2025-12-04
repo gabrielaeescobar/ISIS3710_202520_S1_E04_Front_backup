@@ -118,16 +118,6 @@ export function ActividadForm({
     }
   }, [user, setValue]);
 
-  // Cuando grupoSize cambie, limpiar numeroPersonas si estaba calculado
-  useEffect(() => {
-    if (grupoSize && defaultValues) {
-      const currentNumeroPersonas = watch('numeroPersonas');
-      if (currentNumeroPersonas && defaultValues.precioTotal && defaultValues.precioPorPersona) {
-        setValue('numeroPersonas', undefined, { shouldValidate: false });
-      }
-    }
-  }, [grupoSize, defaultValues, setValue, watch]);
-
   const submit: SubmitHandler<ActividadFormValues> = async (values) => {
     // Calcular precio Total
     let precioTotal: number | undefined = undefined;
