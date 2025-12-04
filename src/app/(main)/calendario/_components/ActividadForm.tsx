@@ -67,7 +67,6 @@ export function ActividadForm({
     formState: { errors, isValid },
     setValue,
     watch,
-    reset,
   } = useForm<ActividadFormValues>({
     resolver: zodResolver(actividadSchema),
     defaultValues: {
@@ -117,17 +116,6 @@ export function ActividadForm({
       setValue('usuarioPagadorId', user.id);
     }
   }, [user, setValue]);
-
-  // Cuando grupoSize cambie y esté disponible, limpiar numeroPersonas si estaba calculado
-  useEffect(() => {
-    if (grupoSize && defaultValues) {
-      const currentNumeroPersonas = watch('numeroPersonas');
-      // Si numeroPersonas fue calculado (no es undefined y hay precioTotal/precioPorPersona)
-      if (currentNumeroPersonas && defaultValues.precioTotal && defaultValues.precioPorPersona) {
-        setValue('numeroPersonas', undefined, { shouldValidate: false });
-      }
-    }
-  }, [grupoSize, defaultValues, setValue, watch]);
 
   const submit: SubmitHandler<ActividadFormValues> = async (values) => {
     // Calcular precio Total
