@@ -51,7 +51,6 @@ export default function ActividadDetallePage() {
               const viaje = await viajeRes.json();
               setMonedaBase(viaje.monedaBase ?? viaje.moneda_base ?? 'USD');
 
-              // Cargar información del grupo para obtener grupoSize
               const grupoId: number | undefined =
                 viaje.grupo?.id ??
                 viaje.grupo_id ??
@@ -320,7 +319,6 @@ export default function ActividadDetallePage() {
             </>
           ) : (
             <ActividadForm
-              key={`edit-${actividad.id}-${grupoSize ?? 'no-group'}`}
               viajeId={actividad.viajeId}
               monedaBase={monedaBase}
               grupoSize={grupoSize}
