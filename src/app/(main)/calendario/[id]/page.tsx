@@ -7,9 +7,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, DollarSign, Zap, User } from 'lucide-react';
-import type { Actividad, ActividadCreate, ActividadUpdate } from '../model/actividades.interfaces';
+import type { Actividad } from '../model/actividades.interfaces';
 import { actividadToEvento } from '../model/actividades.interfaces';
-import { ActividadForm } from '../_components/ActividadForm';
 import { useLocale } from '@/components/locale-provider';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -24,11 +23,8 @@ export default function ActividadDetallePage() {
 
   const [actividad, setActividad] = useState<Actividad | null>(null);
   const [loading, setLoading] = useState(true);
-  const [edit, setEdit] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [monedaBase, setMonedaBase] = useState<string>('USD');
-  const [grupoSize, setGrupoSize] = useState<number | undefined>(undefined);
-  const [updating, setUpdating] = useState(false);
   const { translate } = useLocale();
 
   useEffect(() => {
@@ -52,39 +48,6 @@ export default function ActividadDetallePage() {
               const viaje = await viajeRes.json();
               setMonedaBase(viaje.monedaBase ?? viaje.moneda_base ?? 'USD');
 
-              const grupoId: number | undefined =
-                viaje.grupo?.id ??
-                viaje.grupo_id ??
-                viaje.grupoId ??
-                undefined;
-
-              if (grupoId) {
-                try {
-                  const grupoRes = await fetch(`${API_URL}/grupo/${grupoId}`, {
-                    cache: 'no-store',
-                  });
-
-                  if (grupoRes.ok) {
-                    const grupo = await grupoRes.json();
-
-                    let integrantesCount: number | undefined;
-
-                    if (Array.isArray(grupo.integrantes)) {
-                      integrantesCount = grupo.integrantes.length;
-                    } else if (Array.isArray(grupo.usuarios)) {
-                      integrantesCount = grupo.usuarios.length;
-                    } else if (typeof grupo.tamano === 'number') {
-                      integrantesCount = grupo.tamano;
-                    }
-
-                    if (typeof integrantesCount === 'number' && integrantesCount > 0) {
-                      setGrupoSize(integrantesCount);
-                    }
-                  }
-                } catch (e) {
-                  console.error('Error cargando información del grupo del viaje:', e);
-                }
-              }
             }
           } catch (e) {
             console.error('Error cargando información del viaje:', e);
@@ -119,44 +82,6 @@ export default function ActividadDetallePage() {
     }
   };
 
-  const onUpdate = async (values: ActividadCreate): Promise<void> => {
-    setUpdating(true);
-    try {
-      const updateData: ActividadUpdate = {
-        nombre: values.nombre,
-        fecha: values.fecha,
-        horInicio: values.horInicio,
-        horFin: values.horFin,
-        precioPorPersona: values.precioPorPersona,
-        precioTotal: values.precioTotal,
-        intensidad: values.intensidad,
-        descripcion: values.descripcion,
-        ubicacionId: values.ubicacionId,
-        usuarioPagadorId: values.usuarioPagadorId,
-      };
-
-      const res = await fetch(`${API_URL}/actividades/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateData),
-      });
-
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: 'Error desconocido' }));
-        alert(error.message || translate('eventos.detail.updateError', 'No se pudo actualizar'));
-        return;
-      }
-
-      const updated: Actividad = await res.json();
-      setActividad(updated);
-      setEdit(false);
-    } catch (error) {
-      console.error('Error actualizando actividad:', error);
-      alert(translate('eventos.detail.updateError', 'No se pudo actualizar'));
-    } finally {
-      setUpdating(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -244,95 +169,76 @@ export default function ActividadDetallePage() {
             ← {translate('eventos.detail.back', 'Volver')}
           </Link>
 
-          {!edit && (
-            <>
-              <Button
-                className="bg-[#d5efb8] text-black hover:bg-[#c3e19e]"
-                onClick={() => setEdit(true)}
-              >
-                {translate('eventos.detail.edit', 'Editar')}
-              </Button>
-              <Button
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50"
-                onClick={onDelete}
-              >
-                {translate('eventos.detail.delete', 'Eliminar')}
-              </Button>
-            </>
-          )}
+          <Link
+            href={`/calendario/editar/${id}`}
+            className="inline-flex items-center rounded-md bg-[#d5efb8] px-4 py-2 text-sm font-medium text-black hover:bg-[#c3e19e] transition-colors"
+          >
+            {translate('eventos.detail.edit', 'Editar')}
+          </Link>
+          <Button
+            variant="outline"
+            className="border-red-200 text-red-600 hover:bg-red-50"
+            onClick={onDelete}
+          >
+            {translate('eventos.detail.delete', 'Eliminar')}
+          </Button>
         </div>
       </div>
       <Card className="rounded-2xl border shadow-sm">
         <CardContent className="p-6 space-y-4">
-          {!edit ? (
-            <>
-              <div className="text-xl font-semibold">{actividad.nombre}</div>
-              <div className="text-gray-700">
-                {/* Formatear fecha  */}
-                {(() => {
-                  const [year, month, day] = actividad.fecha.split('-').map(Number);
-                  const date = new Date(year, month - 1, day);
-                  return date.toLocaleDateString('es-ES');
-                })()}
-                {actividad.horInicio ? ` · ${actividad.horInicio.split(':').slice(0, 2).join(':')}` : ''}
-                {actividad.horFin ? ` - ${actividad.horFin.split(':').slice(0, 2).join(':')}` : ''}
-              </div>
-              {actividad.descripcion && (
-                <p className="text-gray-700">{actividad.descripcion}</p>
-              )}
-              <div className="text-sm text-gray-500 space-y-2">
-                {actividad.viajeId && (
-                  <div>
-                    {translate('eventos.detail.trip', 'Viaje')}: {actividad.viajeId}
-                    {actividad.viaje?.nombre && ` - ${actividad.viaje.nombre}`}
-                  </div>
-                )}
-                {actividad.ubicacion && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                    <span>{actividad.ubicacion.nombreLugar} {actividad.ubicacion.direccion ? `- ${actividad.ubicacion.direccion}` : ''}</span>
-                  </div>
-                )}
-                {(actividad.precioTotal || actividad.precioPorPersona) && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-yellow-500 flex-shrink-0" />
-                    <span>
-                      {actividad.precioTotal 
-                        ? `${getMonedaSymbol(monedaBase)} ${typeof actividad.precioTotal === 'string' ? parseFloat(actividad.precioTotal).toLocaleString() : actividad.precioTotal.toLocaleString()} ${translate('eventos.detail.total', 'total')}`
-                        : actividad.precioPorPersona
-                          ? `${getMonedaSymbol(monedaBase)} ${typeof actividad.precioPorPersona === 'string' ? parseFloat(actividad.precioPorPersona).toLocaleString() : actividad.precioPorPersona.toLocaleString()} ${translate('eventos.detail.perPerson', '/persona')}`
-                          : ''
-                      }
-                    </span>
-                  </div>
-                )}
-                {actividad.intensidad && (
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                    <span>{intensidadToDificultad(actividad.intensidad)}</span>
-                  </div>
-                )}
-                {actividad.usuarioPagador && (
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                    <span>{translate('eventos.detail.paidBy', 'Pagado por')}: {actividad.usuarioPagador.nombre}</span>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <ActividadForm
-              viajeId={actividad.viajeId}
-              monedaBase={monedaBase}
-              grupoSize={grupoSize}
-              defaultValues={actividad}
-              onSubmit={onUpdate}
-              onCancel={() => setEdit(false)}
-              loading={updating}
-              submitLabel={translate('eventos.detail.updateEvent', 'Actualizar actividad')}
-            />
+          <div className="text-xl font-semibold">{actividad.nombre}</div>
+          <div className="text-gray-700">
+            {/* Formatear fecha  */}
+            {(() => {
+              const [year, month, day] = actividad.fecha.split('-').map(Number);
+              const date = new Date(year, month - 1, day);
+              return date.toLocaleDateString('es-ES');
+            })()}
+            {actividad.horInicio ? ` · ${actividad.horInicio.split(':').slice(0, 2).join(':')}` : ''}
+            {actividad.horFin ? ` - ${actividad.horFin.split(':').slice(0, 2).join(':')}` : ''}
+          </div>
+          {actividad.descripcion && (
+            <p className="text-gray-700">{actividad.descripcion}</p>
           )}
+          <div className="text-sm text-gray-500 space-y-2">
+            {actividad.viajeId && (
+              <div>
+                {translate('eventos.detail.trip', 'Viaje')}: {actividad.viajeId}
+                {actividad.viaje?.nombre && ` - ${actividad.viaje.nombre}`}
+              </div>
+            )}
+            {actividad.ubicacion && (
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <span>{actividad.ubicacion.nombreLugar} {actividad.ubicacion.direccion ? `- ${actividad.ubicacion.direccion}` : ''}</span>
+              </div>
+            )}
+            {(actividad.precioTotal || actividad.precioPorPersona) && (
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+                <span>
+                  {actividad.precioTotal 
+                    ? `${getMonedaSymbol(monedaBase)} ${typeof actividad.precioTotal === 'string' ? parseFloat(actividad.precioTotal).toLocaleString() : actividad.precioTotal.toLocaleString()} ${translate('eventos.detail.total', 'total')}`
+                    : actividad.precioPorPersona
+                      ? `${getMonedaSymbol(monedaBase)} ${typeof actividad.precioPorPersona === 'string' ? parseFloat(actividad.precioPorPersona).toLocaleString() : actividad.precioPorPersona.toLocaleString()} ${translate('eventos.detail.perPerson', '/persona')}`
+                      : ''
+                  }
+                </span>
+              </div>
+            )}
+            {actividad.intensidad && (
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                <span>{intensidadToDificultad(actividad.intensidad)}</span>
+              </div>
+            )}
+            {actividad.usuarioPagador && (
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                <span>{translate('eventos.detail.paidBy', 'Pagado por')}: {actividad.usuarioPagador.nombre}</span>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
