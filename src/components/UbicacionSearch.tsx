@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { MapPin, Loader2 } from 'lucide-react';
-import type { UbicacionRef } from '@/app/(main)/reservas/model/reserva.interfaces';
+import type { Ubicacion } from '@/app/(main)/reservas/model/reserva.interfaces';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -27,7 +27,7 @@ interface NominatimResult {
 interface UbicacionSearchProps {
   value: number; // ubicacionId seleccionada
   onChange: (ubicacionId: number) => void;
-  onUbicacionCreated?: (ubicacion: UbicacionRef) => void;
+  onUbicacionCreated?: (ubicacion: Ubicacion) => void;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
@@ -45,7 +45,7 @@ export default function UbicacionSearch({
   const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [existingUbicaciones, setExistingUbicaciones] = useState<UbicacionRef[]>([]);
+  const [existingUbicaciones, setExistingUbicaciones] = useState<Ubicacion[]>([]);
   const [loadingUbicaciones, setLoadingUbicaciones] = useState(true);
   const [creating, setCreating] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -59,7 +59,7 @@ export default function UbicacionSearch({
         });
 
         if (res.ok) {
-          const data: UbicacionRef[] = await res.json();
+          const data: Ubicacion[] = await res.json();
           setExistingUbicaciones(data);
         }
       } catch (e) {
@@ -147,7 +147,7 @@ export default function UbicacionSearch({
       });
 
       if (res.ok) {
-        const creada: UbicacionRef = await res.json();
+        const creada: Ubicacion = await res.json();
         setExistingUbicaciones(prev => [...prev, creada]);
         onChange(creada.idUbicacion);
         setSearchQuery(creada.nombreLugar || suggestion.display_name.split(',')[0]);
