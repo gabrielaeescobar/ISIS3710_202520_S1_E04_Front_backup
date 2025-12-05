@@ -91,14 +91,14 @@ export default function GastosResumen({ userName }: Props) {
     // Crear Set con los IDs de los viajes del usuario para filtrar
     const viajesIds: Set<number> = new Set();
     for (const v of viajes) {
-      const id = v.id;
+      const id = v.id ?? v.idViaje;
       if (id) viajesIds.add(id);
     }
 
     // mapa viajeId y moneda del viaje
     const viajeCurrency = new Map<number, string>();
     for (const v of viajes) {
-      const id = v.id;
+      const id = v.id ?? v.idViaje;
       if (!id) continue;
       const moneda =
         v.monedaBase ?? v.moneda_base ?? preferredCurrency;
@@ -119,12 +119,21 @@ export default function GastosResumen({ userName }: Props) {
 
     let total = converted.reduce((acc, g) => acc + g.montoPreferido, 0);
 
-    // Intentar identificar al usuario por email 
-    const currentEmail = authUser?.email?.toLowerCase() ?? displayUserName.toLowerCase();
+    // Identificar al usuario por email (solo si existe)
+    const currentEmail = authUser?.email?.toLowerCase();
+    if (!currentEmail) {
+      // Si no hay email del usuario autenticado, no se puede calcular totalUsuario
+      console.warn('No se puede calcular totalUsuario: falta email del usuario autenticado');
+    }
 
-    let totalUsuario = converted
-      .filter((g) => (g.pagadoPor?.toLowerCase() ?? "") === currentEmail)
-      .reduce((acc, g) => acc + g.montoPreferido, 0);
+    let totalUsuario = currentEmail
+      ? converted
+          .filter((g) => {
+            const pagadoPorEmail = g.pagadoPor?.toLowerCase();
+            return pagadoPorEmail && pagadoPorEmail === currentEmail;
+          })
+          .reduce((acc, g) => acc + g.montoPreferido, 0)
+      : 0;
 
     // Agrupar por viaje
     const byViaje = new Map<number, { nombre: string; total: number }>();
@@ -168,7 +177,7 @@ export default function GastosResumen({ userName }: Props) {
         (a.usuarioPagador?.email as string | undefined)?.toLowerCase() ??
         undefined;
 
-      if (pagadoPor && pagadoPor === currentEmail) {
+      if (currentEmail && pagadoPor && pagadoPor === currentEmail) {
         totalUsuario += montoPreferido;
       }
 
@@ -219,7 +228,7 @@ export default function GastosResumen({ userName }: Props) {
           (r.usuarioPagador?.email as string | undefined)?.toLowerCase() ??
           undefined;
 
-        if (pagadoPor && pagadoPor === currentEmail) {
+        if (currentEmail && pagadoPor && pagadoPor === currentEmail) {
           totalUsuario += montoPreferido;
         }
 

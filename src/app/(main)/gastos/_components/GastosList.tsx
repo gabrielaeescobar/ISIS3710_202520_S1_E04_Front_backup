@@ -56,7 +56,7 @@ export default function GastosList() {
       // Crear Set con los IDs de los viajes del usuario para filtrar
       const viajesIds: Set<number> = new Set();
       for (const v of viajesData) {
-        const id = v.id;
+        const id = v.id ?? v.idViaje;
         if (id) viajesIds.add(id);
       }
 
@@ -70,7 +70,7 @@ export default function GastosList() {
       // Mapa viajeId y moneda del viaje
       const viajeCurrency = new Map<number, string>();
       for (const v of viajesData) {
-        const id = v.id;
+        const id = v.id ?? v.idViaje;
         if (!id) continue;
         const moneda = v.monedaBase ?? v.moneda_base ?? preferredCurrency;
         viajeCurrency.set(id, normalizeCurrency(moneda));

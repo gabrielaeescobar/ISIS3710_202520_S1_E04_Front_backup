@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, 
-  DollarSign, 
   Search, 
   MapPin, 
   Clock,
@@ -386,8 +385,8 @@ export default function HomePage() {
       <div className="p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
               <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
             ))}
           </div>
@@ -414,7 +413,7 @@ export default function HomePage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -426,26 +425,6 @@ export default function HomePage() {
             <div className="text-2xl font-bold">{stats.totalViajes}</div>
             <p className="text-xs text-muted-foreground">
               {translate('home.stats.tripsDescription', 'Viajes planificados')}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {translate('home.stats.totalExpenses', 'Gastos Totales')}
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatAmount(stats.gastosTotales, preferredCurrency)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {translate('home.stats.expensesDescription', 'En todos los viajes')}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {translate('home.stats.currency', 'Moneda:')} {preferredCurrency}
             </p>
           </CardContent>
         </Card>
@@ -482,12 +461,12 @@ export default function HomePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Viajes Recientes */}
+        {/* Viajes */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              {translate('home.recentTrips.title', 'Viajes Recientes')}
+              {translate('home.recentTrips.title', 'Viajes')}
             </CardTitle>
             <Link href="/viajes">
               <Button variant="ghost" size="sm">
@@ -523,7 +502,7 @@ export default function HomePage() {
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{translate('home.recentTrips.empty', 'No tienes viajes recientes')}</p>
+                <p>{translate('home.recentTrips.empty', 'No tienes viajes')}</p>
                 <Link href="/viajes/nuevo">
                   <Button variant="outline" size="sm" className="mt-2">
                     {translate('home.recentTrips.createFirst', 'Crear primer viaje')}
@@ -565,9 +544,6 @@ export default function HomePage() {
                       <p className="text-xs text-muted-foreground">
                         {formatDate(reserva.fecha_inicio)}
                       </p>
-                      <Badge className={`text-xs ${getEstadoColor(reserva.estado)}`}>
-                        {reserva.estado}
-                      </Badge>
                     </div>
                   </div>
                 ))}
