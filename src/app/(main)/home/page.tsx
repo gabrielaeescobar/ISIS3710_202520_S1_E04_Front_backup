@@ -127,15 +127,24 @@ export default function HomePage() {
         ? await actividadesRes.json()
         : [];
 
+      // Crear Set con los IDs de los viajes del usuario para filtrar
+      const viajesIds: Set<number> = new Set();
+      for (const v of viajesJson) {
+        const id = v.id ?? v.idViaje;
+        if (id) viajesIds.add(id);
+      }
+
       const gastosMapped: GastoApi[] = Array.isArray(gastosJson)
         ? mapApiGastoArray(gastosJson)
         : [];
 
       const viajeCurrency = new Map<number, string>();
       for (const v of viajesJson) {
+        const id = v.id ?? v.idViaje;
+        if (!id) continue;
         const moneda =
           v.monedaBase ?? v.moneda_base ?? userCurrency;
-        viajeCurrency.set(v.id, normalizeCurrency(moneda));
+        viajeCurrency.set(id, normalizeCurrency(moneda));
       }
 
       // Estadisticas
@@ -157,6 +166,12 @@ export default function HomePage() {
         origenId?: number;
         destinoId?: number;
         estado?: 'confirmada' | 'pendiente' | 'cancelada';
+        viajeId?: number;
+        viaje_id?: number;
+        viaje?: {
+          id?: number;
+          idViaje?: number;
+        };
       };
 
       type ReservaHotelApi = {
@@ -169,14 +184,30 @@ export default function HomePage() {
         monto?: number;
         moneda?: string;
         viajeId?: number;
+        viaje_id?: number;
+        viaje?: {
+          id?: number;
+          idViaje?: number;
+        };
       };
 
-      const vuelos: ReservaVueloApi[] = Array.isArray(reservasVueloJson)
+      const vuelosRaw: ReservaVueloApi[] = Array.isArray(reservasVueloJson)
         ? (reservasVueloJson as ReservaVueloApi[])
         : [];
-      const hoteles: ReservaHotelApi[] = Array.isArray(reservasHotelJson)
+      const hotelesRaw: ReservaHotelApi[] = Array.isArray(reservasHotelJson)
         ? (reservasHotelJson as ReservaHotelApi[])
         : [];
+
+      // Filtrar reservas que pertenecen a los viajes del usuario
+      const vuelos = vuelosRaw.filter((v) => {
+        const viajeId = v.viajeId ?? v.viaje_id ?? v.viaje?.id ?? v.viaje?.idViaje;
+        return viajeId && viajesIds.has(viajeId);
+      });
+
+      const hoteles = hotelesRaw.filter((h) => {
+        const viajeId = h.viajeId ?? h.viaje_id ?? h.viaje?.id ?? h.viaje?.idViaje;
+        return viajeId && viajesIds.has(viajeId);
+      });
 
       // Incluir actividades y reservas en el total de gastos
       const actividadesArr: any[] = Array.isArray(actividadesJson)
@@ -552,11 +583,6 @@ export default function HomePage() {
               <div className="text-center py-8 text-muted-foreground">
                 <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>{translate('home.upcomingReservations.empty', 'No tienes reservas próximas')}</p>
-                <Link href="/calendario/nuevo">
-                  <Button variant="outline" size="sm" className="mt-2">
-                    {translate('home.upcomingReservations.createFirst', 'Crear primera reserva')}
-                  </Button>
-                </Link>
               </div>
             )}
           </CardContent>

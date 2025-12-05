@@ -80,6 +80,8 @@ export function actividadToEvento(actividad: Actividad): {
   grupoId?: number | null;
   viajeId?: number;
   ubicacion?: string;
+  lat?: number;
+  lng?: number;
   precio?: number;
   dificultad?: "Fácil" | "Moderado" | "Exigente";
   notas?: string;
@@ -115,6 +117,8 @@ export function actividadToEvento(actividad: Actividad): {
     grupoId: null,
     viajeId: actividad.viajeId,
     ubicacion: actividad.ubicacion?.nombreLugar || actividad.ubicacion?.direccion || undefined,
+    lat: actividad.ubicacion?.lat,
+    lng: actividad.ubicacion?.lng,
     precio,
     dificultad: intensidadToDificultad(actividad.intensidad),
     notas: actividad.descripcion || undefined,

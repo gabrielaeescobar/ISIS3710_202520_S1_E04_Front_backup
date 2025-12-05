@@ -28,6 +28,8 @@ export interface EventoUI {
   grupoId?: number | null;                        
   viajeId?: number | null;
   ubicacion?: string;
+  lat?: number; // Coordenada de latitud si está disponible
+  lng?: number; // Coordenada de longitud si está disponible
   precio?: number | null;
   dificultad?: "Fácil" | "Moderado" | "Exigente" | null;
   notas?: string;

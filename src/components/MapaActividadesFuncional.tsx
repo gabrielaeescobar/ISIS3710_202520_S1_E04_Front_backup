@@ -101,7 +101,7 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
     }
   }, []);
 
-  const getCoordinatesFromLocation = (ubicacion: string): [number, number] => {
+  const getCoordinatesFromLocation = (ubicacion: string): [number, number] | null => {
     const locationMap: { [key: string]: [number, number] } = {
       'marrakech': [31.6295, -7.9811],
       'essaouira': [31.5085, -9.7595],
@@ -181,7 +181,8 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
     };
 
     if (!ubicacion || typeof ubicacion !== 'string') {
-      console.warn('Ubicación inválida:', ubicacion);// Marruecos por defecto
+      console.warn('Ubicación inválida:', ubicacion);
+      return null;
     }
 
     const locationKey = ubicacion.toLowerCase().trim();
@@ -235,8 +236,8 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
       }
     }
     
-    console.warn(`No se encontraron coordenadas para: "${ubicacion}", usando coordenadas por defecto`);
-    return [31.6295, -7.9811];
+    console.warn(`No se encontraron coordenadas para: "${ubicacion}". La ubicación no se mostrará en el mapa.`);
+    return null;
   };
 
   useEffect(() => {
@@ -262,10 +263,27 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
         }
 
         const markers = eventosConUbicacion.map((evento, index) => {
-          const coords = getCoordinatesFromLocation(evento.ubicacion);
-          console.log(`Evento ${index + 1}: "${evento.nombre}" | Ubicación: "${evento.ubicacion}" -> Coordenadas: [${coords[0]}, ${coords[1]}]`);
+          // Usar coordenadas directas si están disponibles, sino intentar obtenerlas del nombre
+          let coords: [number, number] | null = null;
           
-          if (isNaN(coords[0]) || isNaN(coords[1]) || 
+          if (evento.lat !== undefined && evento.lng !== undefined && 
+              !isNaN(evento.lat) && !isNaN(evento.lng) &&
+              evento.lat >= -90 && evento.lat <= 90 && 
+              evento.lng >= -180 && evento.lng <= 180) {
+            // Usar coordenadas directas de la ubicación
+            coords = [evento.lat, evento.lng];
+            console.log(`Evento ${index + 1}: "${evento.nombre}" | Ubicación: "${evento.ubicacion}" -> Coordenadas directas: [${coords[0]}, ${coords[1]}]`);
+          } else if (evento.ubicacion) {
+            // Fallback: intentar obtener coordenadas del nombre de la ubicación
+            coords = getCoordinatesFromLocation(evento.ubicacion);
+            if (coords) {
+              console.log(`Evento ${index + 1}: "${evento.nombre}" | Ubicación: "${evento.ubicacion}" -> Coordenadas del mapa: [${coords[0]}, ${coords[1]}]`);
+            } else {
+              console.warn(`Evento ${index + 1}: "${evento.nombre}" | No se pudieron obtener coordenadas para: "${evento.ubicacion}"`);
+            }
+          }
+          
+          if (!coords || isNaN(coords[0]) || isNaN(coords[1]) || 
               coords[0] < -90 || coords[0] > 90 || 
               coords[1] < -180 || coords[1] > 180) {
             console.warn(`Coordenadas inválidas para evento "${evento.nombre}":`, coords);
