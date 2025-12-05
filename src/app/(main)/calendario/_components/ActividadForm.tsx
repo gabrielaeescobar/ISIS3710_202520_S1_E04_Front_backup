@@ -49,7 +49,7 @@ interface ActividadFormProps {
 }
 
 export function ActividadForm({
-  viajeId,
+  viajeId: viajeIdProp,
   monedaBase,
   grupoSize,
   defaultValues,
@@ -60,6 +60,24 @@ export function ActividadForm({
 }: ActividadFormProps) {
   const { translate } = useLocale();
   const user = getAuthUser();
+  
+  // Asegurar que viajeId sea siempre un número válido
+  // Prioridad: viajeIdProp > defaultValues.viajeId
+  const viajeIdFinal = (() => {
+    // Prioridad 1: viajeIdProp (el que se pasa como prop)
+    if (viajeIdProp && typeof viajeIdProp === 'number' && viajeIdProp > 0 && !isNaN(viajeIdProp)) {
+      return viajeIdProp;
+    }
+    // Prioridad 2: defaultValues.viajeId
+    if (defaultValues?.viajeId) {
+      const num = Number(defaultValues.viajeId);
+      if (!isNaN(num) && num > 0) {
+        return num;
+      }
+    }
+    // Si no hay ninguno válido, retornar 0 (pero esto debería ser un error)
+    return 0;
+  })();
 
   const {
     register,
@@ -104,21 +122,44 @@ export function ActividadForm({
         : undefined,
       intensidad: defaultValues?.intensidad || undefined,
       descripcion: defaultValues?.descripcion || "",
-      viajeId,
-      usuarioPagadorId: defaultValues?.usuarioPagadorId || (user?.id ? Number(user.id) : 0),
+      viajeId: (() => {
+        // Prioridad: viajeIdFinal > defaultValues.viajeId
+        if (viajeIdFinal > 0 && !isNaN(viajeIdFinal)) return viajeIdFinal;
+        if (defaultValues?.viajeId) {
+          const num = Number(defaultValues.viajeId);
+          if (!isNaN(num) && num > 0) return num;
+        }
+        // Si no hay ninguno válido, retornar el viajeIdProp directamente (puede ser undefined pero no 0)
+        return viajeIdProp || (defaultValues?.viajeId ? Number(defaultValues.viajeId) : 1);
+      })(),
+      usuarioPagadorId: defaultValues?.usuarioPagadorId ? Number(defaultValues.usuarioPagadorId) : (user?.id ? Number(user.id) : 0),
       ubicacionId: defaultValues?.ubicacionId ? Number(defaultValues.ubicacionId) : 0,
     },
     mode: "onChange",
   });
 
-  // Establecer usuarioPagadorId
+  // Establecer usuarioPagadorId solo una vez cuando se carga el usuario
   useEffect(() => {
     if (user && typeof user.id === 'number') {
       setValue('usuarioPagadorId', user.id);
     }
-  }, [user, setValue]);
+  }, [user?.id, setValue]);
 
   const submit: SubmitHandler<ActividadFormValues> = async (values) => {
+    // Validar ubicacionId
+    const ubicacionIdNum = typeof values.ubicacionId === 'number' ? values.ubicacionId : Number(values.ubicacionId);
+    if (!ubicacionIdNum || ubicacionIdNum <= 0 || isNaN(ubicacionIdNum)) {
+      alert(translate('eventos.form.errors.ubicacionRequired', 'Debes seleccionar una ubicación'));
+      return;
+    }
+
+    // Validar viajeId
+    const viajeIdNum = typeof values.viajeId === 'number' ? values.viajeId : Number(values.viajeId);
+    if (!viajeIdNum || viajeIdNum <= 0 || isNaN(viajeIdNum)) {
+      alert('Error: El viaje no es válido');
+      return;
+    }
+
     // Calcular precio Total
     let precioTotal: number | undefined = undefined;
     const participantes: number | undefined =
@@ -142,10 +183,11 @@ export function ActividadForm({
       precioTotal,
       intensidad: values.intensidad || undefined,
       descripcion: values.descripcion || undefined,
-      viajeId: typeof values.viajeId === 'number' ? values.viajeId : Number(values.viajeId),
+      viajeId: viajeIdNum,
       usuarioPagadorId: typeof values.usuarioPagadorId === 'number' ? values.usuarioPagadorId : Number(values.usuarioPagadorId),
-      ubicacionId: typeof values.ubicacionId === 'number' ? values.ubicacionId : Number(values.ubicacionId),
+      ubicacionId: ubicacionIdNum,
     };
+    
     await onSubmit(parsed);
   };
 
@@ -159,14 +201,24 @@ export function ActividadForm({
     }
   };
 
-  // Calcular ubicacionId
-  const ubicacionIdValue: number = (() => {
-    const val = watch('ubicacionId');
-    return typeof val === 'number' ? val : 0;
-  })();
+  // Calcular ubicacionId usando watch de forma controlada
+  const ubicacionIdValue = watch('ubicacionId') as number | undefined;
+
+
+  const handleFormSubmit = handleSubmit(
+    (data) => {
+      submit(data);
+    },
+    (errors) => {
+      const errorMessages = Object.entries(errors).map(([key, value]) => {
+        return `${key}: ${value?.message || 'Error'}`;
+      });
+      alert('Errores de validación:\n' + errorMessages.join('\n'));
+    }
+  );
 
   return (
-    <form id="form-actividad" onSubmit={handleSubmit(submit)} className="space-y-5">
+    <form id="form-actividad" onSubmit={handleFormSubmit} className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
           <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
@@ -226,7 +278,7 @@ export function ActividadForm({
             {translate('eventos.form.fields.ubicacion', 'Ubicación')} *
           </label>
           <UbicacionSearch
-            value={ubicacionIdValue}
+            value={ubicacionIdValue || 0}
             onChange={(id) => setValue('ubicacionId', id, { shouldValidate: true })}
             placeholder={translate('eventos.form.fields.ubicacion.placeholder', 'Buscar o crear ubicación...')}
             required
@@ -255,7 +307,7 @@ export function ActividadForm({
           )}
         </div>
 
-        {!grupoSize && (
+        {!grupoSize || grupoSize <= 0 ? (
         <div>
           <label htmlFor="numeroPersonas" className="block text-sm font-medium text-gray-700">
             {translate('eventos.form.fields.numeroPersonas', 'Número de Personas')}
@@ -275,7 +327,7 @@ export function ActividadForm({
             {translate('eventos.form.fields.numeroPersonas.help', 'El precio total se calculará automáticamente')}
           </p>
         </div>
-        )}
+        ) : null}
 
         {/* El grupoSize se usa internamente para calcular precioTotal, pero no se muestra al usuario */}
 

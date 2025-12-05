@@ -45,57 +45,66 @@ function EditarActividadContent() {
 
         const actividadData: Actividad = await actividadRes.json();
         setActividad(actividadData);
-        setViajeId(actividadData.viajeId);
+        
+        // Obtener viajeId de diferentes formas posibles
+        const viajeIdValue = actividadData.viajeId 
+          ?? actividadData.viaje?.id 
+          ?? (actividadData as any).viaje?.idViaje
+          ?? undefined;
+        
+        if (!viajeIdValue) {
+          throw new Error(translate('eventos.detail.noViaje', 'La actividad no tiene un viaje asociado'));
+        }
+        
+        setViajeId(Number(viajeIdValue));
 
         // Cargar información del viaje para obtener moneda base y grupoSize
-        if (actividadData.viajeId) {
-          try {
-            const viajeRes = await fetch(`${API_URL}/viajes/${actividadData.viajeId}`, {
-              cache: 'no-store',
-            });
-            
-            if (viajeRes.ok) {
-              const viaje = await viajeRes.json();
-              const moneda = viaje.monedaBase ?? viaje.moneda_base ?? 'USD';
-              setMonedaBase(moneda);
+        try {
+          const viajeRes = await fetch(`${API_URL}/viajes/${viajeIdValue}`, {
+            cache: 'no-store',
+          });
+          
+          if (viajeRes.ok) {
+            const viaje = await viajeRes.json();
+            const moneda = viaje.monedaBase ?? viaje.moneda_base ?? 'USD';
+            setMonedaBase(moneda);
 
-              const grupoId: number | undefined =
-                viaje.grupo?.id ??
-                viaje.grupo_id ??
-                viaje.grupoId ??
-                undefined;
+            const grupoId: number | undefined =
+              viaje.grupo?.id ??
+              viaje.grupo_id ??
+              viaje.grupoId ??
+              undefined;
 
-              if (grupoId) {
-                try {
-                  const grupoRes = await fetch(`${API_URL}/grupo/${grupoId}`, {
-                    cache: 'no-store',
-                  });
+            if (grupoId) {
+              try {
+                const grupoRes = await fetch(`${API_URL}/grupo/${grupoId}`, {
+                  cache: 'no-store',
+                });
 
-                  if (grupoRes.ok) {
-                    const grupo = await grupoRes.json();
+                if (grupoRes.ok) {
+                  const grupo = await grupoRes.json();
 
-                    let integrantesCount: number | undefined;
+                  let integrantesCount: number | undefined;
 
-                    if (Array.isArray(grupo.integrantes)) {
-                      integrantesCount = grupo.integrantes.length;
-                    } else if (Array.isArray(grupo.usuarios)) {
-                      integrantesCount = grupo.usuarios.length;
-                    } else if (typeof grupo.tamano === 'number') {
-                      integrantesCount = grupo.tamano;
-                    }
-
-                    if (typeof integrantesCount === 'number' && integrantesCount > 0) {
-                      setGrupoSize(integrantesCount);
-                    }
+                  if (Array.isArray(grupo.integrantes)) {
+                    integrantesCount = grupo.integrantes.length;
+                  } else if (Array.isArray(grupo.usuarios)) {
+                    integrantesCount = grupo.usuarios.length;
+                  } else if (typeof grupo.tamano === 'number') {
+                    integrantesCount = grupo.tamano;
                   }
-                } catch (e) {
-                  console.error('Error cargando información del grupo del viaje:', e);
+
+                  if (typeof integrantesCount === 'number' && integrantesCount > 0) {
+                    setGrupoSize(integrantesCount);
+                  }
                 }
+              } catch (e) {
+                console.error('Error cargando información del grupo del viaje:', e);
               }
             }
-          } catch (e) {
-            console.error('Error cargando información del viaje:', e);
           }
+        } catch (e) {
+          console.error('Error cargando información del viaje:', e);
         }
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : translate('eventos.detail.unexpectedError', 'Error inesperado'));
@@ -130,19 +139,25 @@ function EditarActividadContent() {
       });
 
       if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: 'Error desconocido' }));
-        throw new Error(error.message || translate('eventos.detail.updateError', 'No se pudo actualizar'));
+        const errorText = await res.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText || 'Error desconocido' };
+        }
+        throw new Error(errorData.message || errorData.error || translate('eventos.detail.updateError', 'No se pudo actualizar'));
       }
 
       // Redirigir al viaje si existe, sino al calendario
-      if (viajeId) {
-        router.push(`/viajes/${viajeId}`);
+      const redirectViajeId = viajeId ?? actividad?.viajeId;
+      if (redirectViajeId) {
+        router.push(`/viajes/${redirectViajeId}`);
       } else {
         router.push('/calendario');
       }
       router.refresh();
     } catch (error) {
-      console.error('Error actualizando actividad:', error);
       alert(error instanceof Error ? error.message : translate('eventos.detail.updateError', 'No se pudo actualizar'));
     } finally {
       setLoading(false);
@@ -201,7 +216,7 @@ function EditarActividadContent() {
           </h1>
           <div className="ml-auto">
             <Link
-              href={actividad?.viajeId ? `/viajes/${actividad.viajeId}` : '/calendario'}
+              href="/calendario"
               className="inline-flex items-center rounded-md bg-[#d5efb8] px-4 py-2 text-sm font-medium text-black hover:bg-[#c3e19e] transition-colors"
             >
               ← {translate('eventos.edit.back', 'Volver')}
