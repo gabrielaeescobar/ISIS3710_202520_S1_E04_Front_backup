@@ -46,8 +46,10 @@ interface ActividadApi {
   nombre: string;
   fecha: string;
   horInicio: string;
+  viajeId?: number;
+  viaje_id?: number;
   viaje?: {
-    idViaje: number;
+    id: number;
   };
 }
 
@@ -74,19 +76,44 @@ export const EventosList = () => {
     (async () => {
       try {
         const token = getAuthToken();
+        const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+        // Primero obtener los viajes del usuario para filtrar
+        const viajesRes = await fetch(`${API_URL}/usuarios/${user.id}/viajes`, {
+          cache: 'no-store',
+          headers: authHeaders,
+        });
+
+        let viajesIds: Set<number> = new Set();
+        if (viajesRes.ok) {
+          const viajesJson: unknown = await viajesRes.json();
+          const viajesData: Array<{ id: number }> = Array.isArray(viajesJson)
+            ? (viajesJson as Array<{ id: number }>)
+            : [];
+          viajesData.forEach((v) => {
+            if (v.id) viajesIds.add(v.id);
+          });
+        }
+
+        // Si no hay viajes, no hay eventos que mostrar
+        if (viajesIds.size === 0) {
+          setEventos([]);
+          setLoading(false);
+          return;
+        }
 
         const [vuelosRes, hotelesRes, actividadesRes] = await Promise.all([
           fetch(`${API_URL}/reservas-vuelo`, {
             cache: 'no-store',
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            headers: authHeaders,
           }),
           fetch(`${API_URL}/reservas-hotel`, {
             cache: 'no-store',
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            headers: authHeaders,
           }),
           fetch(`${API_URL}/actividades`, {
             cache: 'no-store',
-            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            headers: authHeaders,
           }),
         ]);
 
@@ -125,7 +152,24 @@ export const EventosList = () => {
           ? (actividadesJson as ActividadApi[])
           : [];
 
-        const vuelosMapped: CalendarEvent[] = vuelosData.map((v) => ({
+        // Filtrar solo los eventos que pertenecen a los viajes del usuario
+        const vuelosFiltrados = vuelosData.filter((v) => {
+          const viajeId = v.viaje?.idViaje;
+          return viajeId && viajesIds.has(viajeId);
+        });
+
+        const hotelesFiltrados = hotelesData.filter((h) => {
+          const viajeId = h.viaje?.idViaje;
+          return viajeId && viajesIds.has(viajeId);
+        });
+
+        const actividadesFiltradas = actividadesData.filter((a) => {
+          // Intentar obtener viajeId de diferentes formas posibles
+          const viajeId = a.viajeId ?? a.viaje_id ?? a.viaje?.id;
+          return viajeId && viajesIds.has(viajeId);
+        });
+
+        const vuelosMapped: CalendarEvent[] = vuelosFiltrados.map((v) => ({
           id: `vuelo-${v.idReserva}`,
           title: `✈️ ${v.aerolinea} (Viaje ${v.viaje?.idViaje ?? ''})`,
           start: `${v.fechaSalida}T${v.horaSalida}`,
@@ -137,7 +181,7 @@ export const EventosList = () => {
           },
         }));
 
-        const hotelesMapped: CalendarEvent[] = hotelesData.map((h) => ({
+        const hotelesMapped: CalendarEvent[] = hotelesFiltrados.map((h) => ({
           id: `hotel-${h.idReserva}`,
           title: `🏨 ${h.nombre} (Viaje ${h.viaje?.idViaje ?? ''})`,
           start: `${h.fechaCheckIn}T10:00:00`,
@@ -149,17 +193,20 @@ export const EventosList = () => {
           },
         }));
 
-        const actividadesMapped: CalendarEvent[] = actividadesData.map((a) => ({
-          id: `actividad-${a.idActividad}`,
-          title: `🎯 ${a.nombre} (Viaje ${a.viaje?.idViaje ?? ''})`,
-          start: `${a.fecha}T${a.horInicio}`,
-          backgroundColor: '#f97316',
-          borderColor: '#ea580c',
-          extendedProps: {
-            tipo: 'actividad',
-            viajeId: a.viaje?.idViaje,
-          },
-        }));
+        const actividadesMapped: CalendarEvent[] = actividadesFiltradas.map((a) => {
+          const viajeId = a.viajeId ?? a.viaje_id ?? a.viaje?.id;
+          return {
+            id: `actividad-${a.idActividad}`,
+            title: `${a.nombre}${viajeId ? ` (Viaje ${viajeId})` : ''}`,
+            start: `${a.fecha}T${a.horInicio}`,
+            backgroundColor: '#f97316',
+            borderColor: '#ea580c',
+            extendedProps: {
+              tipo: 'actividad',
+              viajeId,
+            },
+          };
+        });
 
         const todosEventos = [
           ...vuelosMapped,
@@ -168,7 +215,6 @@ export const EventosList = () => {
         ];
 
         setEventos(todosEventos);
-        console.log('Eventos recibidos desde el back:', todosEventos);
       } catch (e) {
         console.error('Error de red llamando a los endpoints de eventos', e);
       } finally {
