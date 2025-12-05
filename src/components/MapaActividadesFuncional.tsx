@@ -69,8 +69,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
     return '#3B82F6'; // Azul por defecto
   };
 
-  
-  console.log('MapaActividadesFuncional render - eventos:', eventos.length, 'mapLoaded:', mapLoaded, 'mapError:', mapError);
 
   // estilos CSS personalizados para Leaflet
   useEffect(() => {
@@ -181,7 +179,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
     };
 
     if (!ubicacion || typeof ubicacion !== 'string') {
-      console.warn('Ubicación inválida:', ubicacion);
       return null;
     }
 
@@ -236,7 +233,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
       }
     }
     
-    console.warn(`No se encontraron coordenadas para: "${ubicacion}". La ubicación no se mostrará en el mapa.`);
     return null;
   };
 
@@ -254,10 +250,7 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
 
         const eventosConUbicacion = eventos.filter((evento): evento is Evento & { ubicacion: string } => Boolean(evento.ubicacion));
         
-        console.log('Eventos con ubicación:', eventosConUbicacion.length);
-        
         if (eventosConUbicacion.length === 0) {
-          console.log('No hay eventos con ubicación, mostrando mapa vacío');
           setMapLoaded(true);
           return;
         }
@@ -272,21 +265,14 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
               evento.lng >= -180 && evento.lng <= 180) {
             // Usar coordenadas directas de la ubicación
             coords = [evento.lat, evento.lng];
-            console.log(`Evento ${index + 1}: "${evento.nombre}" | Ubicación: "${evento.ubicacion}" -> Coordenadas directas: [${coords[0]}, ${coords[1]}]`);
           } else if (evento.ubicacion) {
             // Fallback: intentar obtener coordenadas del nombre de la ubicación
             coords = getCoordinatesFromLocation(evento.ubicacion);
-            if (coords) {
-              console.log(`Evento ${index + 1}: "${evento.nombre}" | Ubicación: "${evento.ubicacion}" -> Coordenadas del mapa: [${coords[0]}, ${coords[1]}]`);
-            } else {
-              console.warn(`Evento ${index + 1}: "${evento.nombre}" | No se pudieron obtener coordenadas para: "${evento.ubicacion}"`);
-            }
           }
           
           if (!coords || isNaN(coords[0]) || isNaN(coords[1]) || 
               coords[0] < -90 || coords[0] > 90 || 
               coords[1] < -180 || coords[1] > 180) {
-            console.warn(`Coordenadas inválidas para evento "${evento.nombre}":`, coords);
             return null;
           }
           
@@ -306,9 +292,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
           m.lat >= 20 && m.lat <= 36 && m.lng >= -18 && m.lng <= -1
         );
         
-        console.log(`Total marcadores: ${markers.length}`);
-        console.log('Marcadores de Marruecos:', marruecosMarkers.length);
-        
         let centerLat, centerLng;
         if (marruecosMarkers.length > 0 && marruecosMarkers.length >= markers.length / 2) {
           centerLat = marruecosMarkers.reduce((sum, marker) => sum + marker.lat, 0) / marruecosMarkers.length;
@@ -317,8 +300,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
           centerLat = markers.reduce((sum, marker) => sum + marker.lat, 0) / markers.length;
           centerLng = markers.reduce((sum, marker) => sum + marker.lng, 0) / markers.length;
         }
-        
-        console.log('Centro calculado:', { centerLat, centerLng });
 
         let boundsLats, boundsLngs;
         if (marruecosMarkers.length > 0 && marruecosMarkers.length >= markers.length / 2) {
@@ -334,16 +315,11 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
         const minLng = Math.min(...boundsLngs);
         const maxLng = Math.max(...boundsLngs);
         
-        console.log(`Total marcadores válidos: ${markers.length}`);
-        console.log('Marcadores de Marruecos:', marruecosMarkers.length);
-        console.log('Bounds del mapa:', { minLat, maxLat, minLng, maxLng });
-        
         const latRange = maxLat - minLat;
         const lngRange = maxLng - minLng;
         const padding = Math.max(0.1, Math.min(latRange, lngRange) * 0.1); // Padding proporcional
         const bbox = `${minLng - padding},${minLat - padding},${maxLng + padding},${maxLat + padding}`;
         
-        console.log('URL del mapa:', `bbox=${bbox}`);
         if (mapRef.current) {
           mapRef.current.innerHTML = '';
           
@@ -378,7 +354,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
               createMap();
             };
             script.onerror = () => {
-              console.warn('Error cargando Leaflet, usando mapa estático');
               createStaticMap();
             };
             document.head.appendChild(script);
@@ -387,7 +362,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
           const createMap = () => {
             const L = window.L;
             if (!L) {
-              console.warn('Leaflet no disponible, usando mapa estático');
               createStaticMap();
               return;
             }
@@ -522,7 +496,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
                 map.fitBounds(group.getBounds().pad(0.1));
               }
               
-              console.log('Mapa Leaflet creado exitosamente');
               
             } catch (error) {
               console.error('Error creando mapa Leaflet:', error);
@@ -531,7 +504,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
           };
           
           const createStaticMap = () => {
-            console.log('Creando mapa estático como fallback');
             
             // Crear iframe de fondo del mapa
             const iframe = document.createElement('iframe');
@@ -548,8 +520,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
             
             // Manejar errores de carga del iframe
             iframe.onerror = () => {
-              console.warn('Error');
-
               iframe.style.display = 'none';
               // Mostrar mensaje de error en el contenedor
               const errorDiv = document.createElement('div');
@@ -652,11 +622,8 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
           loadLeaflet();
         }
 
-        console.log('Mapa cargado exitosamente');
         setMapLoaded(true);
       } catch (error) {
-        console.error('Error cargando el mapa:', error);
-        console.error('Error details:', error);
         setMapError(true);
       }
     };
@@ -707,8 +674,6 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
     ));
   };
 
-  console.log('Render - mapError:', mapError, 'mapLoaded:', mapLoaded);
-  
   return (
     <div className={`relative ${className}`} style={{ minHeight: '320px' }}>
       {mapError ? (

@@ -130,7 +130,7 @@ export default function HomePage() {
       // Crear Set con los IDs de los viajes del usuario para filtrar
       const viajesIds: Set<number> = new Set();
       for (const v of viajesJson) {
-        const id = v.id ?? v.idViaje;
+        const id = v.id;
         if (id) viajesIds.add(id);
       }
 
@@ -140,7 +140,7 @@ export default function HomePage() {
 
       const viajeCurrency = new Map<number, string>();
       for (const v of viajesJson) {
-        const id = v.id ?? v.idViaje;
+        const id = v.id;
         if (!id) continue;
         const moneda =
           v.monedaBase ?? v.moneda_base ?? userCurrency;

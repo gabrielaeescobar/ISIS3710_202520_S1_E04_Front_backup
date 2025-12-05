@@ -121,10 +121,6 @@ export default function GastosResumen({ userName }: Props) {
 
     // Identificar al usuario por email (solo si existe)
     const currentEmail = authUser?.email?.toLowerCase();
-    if (!currentEmail) {
-      // Si no hay email del usuario autenticado, no se puede calcular totalUsuario
-      console.warn('No se puede calcular totalUsuario: falta email del usuario autenticado');
-    }
 
     let totalUsuario = currentEmail
       ? converted
