@@ -53,10 +53,24 @@ export default function GastosList() {
       const reservasHotelData: any[] = rhRes.ok ? (await rhRes.json()) : [];
       const viajesData: any[] = vRes.ok ? (await vRes.json()) : [];
 
+      // Crear Set con los IDs de los viajes del usuario para filtrar
+      const viajesIds: Set<number> = new Set();
+      for (const v of viajesData) {
+        const id = v.id;
+        if (id) viajesIds.add(id);
+      }
+
+      // Si no hay viajes, no hay gastos que mostrar
+      if (viajesIds.size === 0) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+
       // Mapa viajeId y moneda del viaje
       const viajeCurrency = new Map<number, string>();
       for (const v of viajesData) {
-        const id = v.id ?? v.idViaje;
+        const id = v.id;
         if (!id) continue;
         const moneda = v.monedaBase ?? v.moneda_base ?? preferredCurrency;
         viajeCurrency.set(id, normalizeCurrency(moneda));
@@ -64,8 +78,13 @@ export default function GastosList() {
 
       const allItems: ListItem[] = [];
 
-      // Gastos
-      for (const g of gastosData) {
+      // Filtrar y procesar gastos que pertenecen a los viajes del usuario
+      const gastosFiltrados = gastosData.filter((g) => {
+        const viajeId = g.viajeId;
+        return viajeId && viajesIds.has(viajeId);
+      });
+
+      for (const g of gastosFiltrados) {
         const converted = convertAmount(g.monto, g.moneda ?? "EUR", preferredCurrency);
         allItems.push({
           id: `gasto-${g.idGasto}`,
@@ -75,10 +94,14 @@ export default function GastosList() {
         });
       }
 
-      // Actividades
-      for (const a of actividadesData) {
+      // Filtrar y procesar actividades que pertenecen a los viajes del usuario
+      const actividadesFiltradas = actividadesData.filter((a) => {
         const viajeId = a.viajeId ?? a.viaje_id ?? a.viaje?.id;
-        if (!viajeId) continue;
+        return viajeId && viajesIds.has(viajeId);
+      });
+
+      for (const a of actividadesFiltradas) {
+        const viajeId = a.viajeId ?? a.viaje_id ?? a.viaje?.id;
         const rawTotal = typeof a.precioTotal === "number" ? a.precioTotal : a.precioTotal ? parseFloat(a.precioTotal) : undefined;
         if (!rawTotal || Number.isNaN(rawTotal)) continue;
         const monedaActividad = viajeCurrency.get(viajeId) ?? preferredCurrency;
@@ -91,9 +114,14 @@ export default function GastosList() {
         });
       }
 
-      // Reservas de vuelo
-      for (const r of reservasVueloData) {
-        const viajeId = r.viajeId ?? r.viaje_id ?? r.viaje?.idViaje;
+      // Filtrar y procesar reservas de vuelo que pertenecen a los viajes del usuario
+      const reservasVueloFiltradas = reservasVueloData.filter((r) => {
+        const viajeId = r.viajeId ?? r.viaje_id ?? r.viaje?.idViaje ?? r.viaje?.id;
+        return viajeId && viajesIds.has(viajeId);
+      });
+
+      for (const r of reservasVueloFiltradas) {
+        const viajeId = r.viajeId ?? r.viaje_id ?? r.viaje?.idViaje ?? r.viaje?.id;
         const rawMonto = typeof r.monto === "number" ? r.monto : r.monto ? parseFloat(r.monto) : typeof r.precio_total === "number" ? r.precio_total : r.precio_total ? parseFloat(r.precio_total) : undefined;
         if (!rawMonto || Number.isNaN(rawMonto)) continue;
         const monedaReserva = r.moneda ?? (viajeId ? viajeCurrency.get(viajeId) : undefined) ?? preferredCurrency;
@@ -106,9 +134,14 @@ export default function GastosList() {
         });
       }
 
-      // Reservas de hotel
-      for (const r of reservasHotelData) {
-        const viajeId = r.viajeId ?? r.viaje_id ?? r.viaje?.idViaje;
+      // Filtrar y procesar reservas de hotel que pertenecen a los viajes del usuario
+      const reservasHotelFiltradas = reservasHotelData.filter((r) => {
+        const viajeId = r.viajeId ?? r.viaje_id ?? r.viaje?.idViaje ?? r.viaje?.id;
+        return viajeId && viajesIds.has(viajeId);
+      });
+
+      for (const r of reservasHotelFiltradas) {
+        const viajeId = r.viajeId ?? r.viaje_id ?? r.viaje?.idViaje ?? r.viaje?.id;
         const rawMonto = typeof r.monto === "number" ? r.monto : r.monto ? parseFloat(r.monto) : typeof r.precio_total === "number" ? r.precio_total : r.precio_total ? parseFloat(r.precio_total) : undefined;
         if (!rawMonto || Number.isNaN(rawMonto)) continue;
         const monedaReserva = r.moneda ?? (viajeId ? viajeCurrency.get(viajeId) : undefined) ?? preferredCurrency;

@@ -88,18 +88,31 @@ export default function GastosResumen({ userName }: Props) {
   }, []);
 
   const { total, totalUsuario, porViaje } = useMemo(() => {
+    // Crear Set con los IDs de los viajes del usuario para filtrar
+    const viajesIds: Set<number> = new Set();
+    for (const v of viajes) {
+      const id = v.id;
+      if (id) viajesIds.add(id);
+    }
+
     // mapa viajeId y moneda del viaje
     const viajeCurrency = new Map<number, string>();
     for (const v of viajes) {
-      const id = v.id ?? v.idViaje;
+      const id = v.id;
       if (!id) continue;
       const moneda =
         v.monedaBase ?? v.moneda_base ?? preferredCurrency;
       viajeCurrency.set(id, normalizeCurrency(moneda));
     }
 
-    // Convertir todos los gastos a la moneda preferida 
-    const converted = gastos.map((g) => ({
+    // Filtrar gastos que pertenecen a los viajes del usuario
+    const gastosFiltrados = gastos.filter((g) => {
+      const viajeId = g.viajeId;
+      return viajeId && viajesIds.has(viajeId);
+    });
+
+    // Convertir todos los gastos filtrados a la moneda preferida 
+    const converted = gastosFiltrados.map((g) => ({
       ...g,
       montoPreferido: convertAmount(g.monto, g.moneda ?? "EUR", preferredCurrency),
     }));
@@ -124,10 +137,14 @@ export default function GastosResumen({ userName }: Props) {
       byViaje.set(viajeId, { ...current, total: current.total + g.montoPreferido });
     }
 
-    // Actividades
-    for (const a of actividades) {
+    // Filtrar y procesar actividades que pertenecen a los viajes del usuario
+    const actividadesFiltradas = actividades.filter((a) => {
       const viajeId = a.viajeId ?? a.viaje_id ?? a.viaje?.id;
-      if (!viajeId) continue;
+      return viajeId && viajesIds.has(viajeId);
+    });
+
+    for (const a of actividadesFiltradas) {
+      const viajeId = a.viajeId ?? a.viaje_id ?? a.viaje?.id;
 
       const rawTotal =
         typeof a.precioTotal === "number"
@@ -166,8 +183,14 @@ export default function GastosResumen({ userName }: Props) {
 
     // Reservas de vuelo y hotel
     const processReservaArray = (arr: any[]) => {
-      for (const r of arr) {
-        const viajeId = r.viajeId ?? r.viaje_id ?? r.viaje?.idViaje;
+      // Filtrar reservas que pertenecen a los viajes del usuario
+      const reservasFiltradas = arr.filter((r) => {
+        const viajeId = r.viajeId ?? r.viaje_id ?? r.viaje?.idViaje ?? r.viaje?.id;
+        return viajeId && viajesIds.has(viajeId);
+      });
+
+      for (const r of reservasFiltradas) {
+        const viajeId = r.viajeId ?? r.viaje_id ?? r.viaje?.idViaje ?? r.viaje?.id;
         const rawMonto =
           typeof r.monto === "number"
             ? r.monto
