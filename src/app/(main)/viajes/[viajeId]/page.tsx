@@ -26,6 +26,7 @@ import GastosTable from '@/components/GastosTable';
 import ReservasList from '@/app/(main)/reservas/_components/ReservasList';
 import { useLocale } from '@/components/locale-provider';
 import { getAuthToken } from '@/lib/auth-client';
+import { getCurrencySymbol } from '@/lib/currency';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -524,7 +525,9 @@ export default function ViajeDetailPage() {
                         {evento.precio && (
                           <div className="flex items-center gap-3 text-gray-600">
                             <DollarSign className="w-5 h-5 text-yellow-500" />
-                            <span className="font-medium">{evento.precio} {translate('viajes.event.perPerson', '€/persona')}</span>
+                            <span className="font-medium">
+                              {evento.precio}/persona
+                            </span>
                           </div>
                         )}
                         
@@ -690,6 +693,13 @@ export default function ViajeDetailPage() {
           <GastosTable 
             viajeId={viajeId} 
             monedaBase={viaje.monedaBase ?? viaje.moneda_base ?? 'USD'}
+            presupuestoInicial={
+              viaje.presupuestoInicial 
+                ? (typeof viaje.presupuestoInicial === 'string' 
+                    ? parseFloat(viaje.presupuestoInicial) 
+                    : viaje.presupuestoInicial)
+                : (viaje.presupuesto_inicial ?? undefined)
+            }
           />
         </div>
       </div>

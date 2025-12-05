@@ -14,6 +14,7 @@ import { useLocale } from '@/components/locale-provider';
 interface GastosTableProps {
   viajeId: string;
   monedaBase: string; // Moneda base del viaje
+  presupuestoInicial?: number | string; // Presupuesto inicial del viaje
   className?: string;
 }
 
@@ -43,6 +44,7 @@ type GastoUnificado =
 export default function GastosTable({
   viajeId,
   monedaBase,
+  presupuestoInicial,
   className = '',
 }: GastosTableProps) {
   const [gastos, setGastos] = useState<Gasto[]>([]);
@@ -389,8 +391,8 @@ export default function GastosTable({
               </div>
             </div>
 
-            {/* Fila de total */}
-            <div className="pt-6 border-t border-gray-200">
+            {/* Fila de total y presupuesto */}
+            <div className="pt-6 border-t border-gray-200 space-y-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <DollarSign className="w-6 h-6 text-green-500" />
@@ -414,6 +416,57 @@ export default function GastosTable({
                   </div>
                 </div>
               </div>
+              
+              {/* Presupuesto restante */}
+              {presupuestoInicial !== undefined && presupuestoInicial !== null && (
+                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="w-5 h-5 text-blue-500" />
+                    <span className="font-medium text-gray-700">
+                      {translate(
+                        'gastos.budget.remaining',
+                        'Presupuesto restante',
+                      )}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    {(() => {
+                      const presupuesto = typeof presupuestoInicial === 'string' 
+                        ? parseFloat(presupuestoInicial) 
+                        : presupuestoInicial;
+                      const restante = presupuesto - total;
+                      const isNegative = restante < 0;
+                      
+                      return (
+                        <>
+                          <div className={`text-2xl font-bold ${isNegative ? 'text-red-600' : 'text-blue-600'}`}>
+                            {getMonedaSymbol(monedaBase)}{' '}
+                            {Math.abs(restante).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {translate(
+                              'gastos.budget.initial',
+                              'Presupuesto inicial',
+                            )}: {getMonedaSymbol(monedaBase)}{' '}
+                            {presupuesto.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                            {isNegative && (
+                              <span className="text-red-600 ml-2">
+                                ({translate('gastos.budget.over', 'Excedido')})
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
           </>
         ) : (
