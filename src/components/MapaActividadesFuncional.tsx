@@ -248,7 +248,7 @@ export default function MapaActividadesFuncional({ eventos, className = '' }: Ma
           mapRef.current.innerHTML = '';
         }
 
-        const eventosConUbicacion = eventos.filter((evento): evento is Evento & { ubicacion: string } => Boolean(evento.ubicacion));
+        const eventosConUbicacion = eventos.filter((evento): evento is EventoUI & { ubicacion: string } => Boolean(evento.ubicacion));
         
         if (eventosConUbicacion.length === 0) {
           setMapLoaded(true);
